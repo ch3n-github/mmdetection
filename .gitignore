@@ -123,4 +123,6 @@ work_dirs/
 *.py~
 *.sh~
 
-mmdet_serve.tar
+# my
+datasets/SSDD/Annotations/
+datasets/SSDD/JPEGImages/

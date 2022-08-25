@@ -22,7 +22,7 @@ class BaseSampler(metaclass=ABCMeta):
         self.pos_sampler = self
         self.neg_sampler = self
 
-    @abstractmethod
+    @abstractmethod # 抽象基类
     def _sample_pos(self, assign_result, num_expected, **kwargs):
         """Sample positive samples."""
         pass
@@ -72,6 +72,7 @@ class BaseSampler(metaclass=ABCMeta):
 
         gt_flags = bboxes.new_zeros((bboxes.shape[0], ), dtype=torch.uint8)
         if self.add_gt_as_proposals and len(gt_bboxes) > 0:
+            # 增加 gt 作为 proposals
             if gt_labels is None:
                 raise ValueError(
                     'gt_labels must be given when add_gt_as_proposals is True')
@@ -80,21 +81,29 @@ class BaseSampler(metaclass=ABCMeta):
             gt_ones = bboxes.new_ones(gt_bboxes.shape[0], dtype=torch.uint8)
             gt_flags = torch.cat([gt_ones, gt_flags])
 
+        # 计算正样本个数
         num_expected_pos = int(self.num * self.pos_fraction)
+        # 正样本随机采样
         pos_inds = self.pos_sampler._sample_pos(
             assign_result, num_expected_pos, bboxes=bboxes, **kwargs)
         # We found that sampled indices have duplicated items occasionally.
         # (may be a bug of PyTorch)
+        # 去重
         pos_inds = pos_inds.unique()
+
+        # 计算负样本数
         num_sampled_pos = pos_inds.numel()
         num_expected_neg = self.num - num_sampled_pos
         if self.neg_pos_ub >= 0:
+            # 计算负样本个数上限
             _pos = max(1, num_sampled_pos)
             neg_upper_bound = int(self.neg_pos_ub * _pos)
             if num_expected_neg > neg_upper_bound:
                 num_expected_neg = neg_upper_bound
+        # 负样本随机采样
         neg_inds = self.neg_sampler._sample_neg(
             assign_result, num_expected_neg, bboxes=bboxes, **kwargs)
+        # 去重
         neg_inds = neg_inds.unique()
 
         sampling_result = SamplingResult(pos_inds, neg_inds, bboxes, gt_bboxes,

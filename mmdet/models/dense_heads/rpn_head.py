@@ -49,20 +49,24 @@ class RPNHead(AnchorHead):
                         3,
                         padding=1,
                         inplace=False))
+             # 特征通道变换
             self.rpn_conv = nn.Sequential(*rpn_convs)
         else:
             self.rpn_conv = nn.Conv2d(
                 self.in_channels, self.feat_channels, 3, padding=1)
+        # 分类分支，类别固定是2，表示前后景分类
+        # 并且由于 cls loss 是 bce，故实际上 self.cls_out_channels=1
         self.rpn_cls = nn.Conv2d(self.feat_channels,
                                  self.num_base_priors * self.cls_out_channels,
                                  1)
+        # 回归分支，固定输出4个数值，表示基于 anchor 的变换值
         self.rpn_reg = nn.Conv2d(self.feat_channels, self.num_base_priors * 4,
                                  1)
 
     def forward_single(self, x):
         """Forward feature map of a single scale level."""
         x = self.rpn_conv(x)
-        x = F.relu(x, inplace=False)
+        x = F.relu(x, inplace=True)
         rpn_cls_score = self.rpn_cls(x)
         rpn_bbox_pred = self.rpn_reg(x)
         return rpn_cls_score, rpn_bbox_pred
@@ -211,6 +215,7 @@ class RPNHead(AnchorHead):
                 are bounding box positions (tl_x, tl_y, br_x, br_y) and the
                 5-th column is a score between 0 and 1.
         """
+        # .对每张图片的 5 个输出层都运行 2 ~ 3 步骤，将预测结果全部收集，然后进行解码
         scores = torch.cat(mlvl_scores)
         anchors = torch.cat(mlvl_valid_anchors)
         rpn_bbox_pred = torch.cat(mlvl_bboxes)

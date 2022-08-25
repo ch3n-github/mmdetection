@@ -23,11 +23,6 @@ class MaxIoUAssigner(BaseAssigner):
         min_pos_iou (float): Minimum iou for a bbox to be considered as a
             positive bbox. Positive samples can have smaller IoU than
             pos_iou_thr due to the 4th step (assign max IoU sample to each gt).
-            `min_pos_iou` is set to avoid assigning bboxes that have extremely
-            small iou with GT as positive samples. It brings about 0.3 mAP
-            improvements in 1x schedule but does not affect the performance of
-            3x schedule. More comparisons can be found in
-            `PR #7464 <https://github.com/open-mmlab/mmdetection/pull/7464>`_.
         gt_max_assign_all (bool): Whether to assign all bboxes with the same
             highest overlap with some gt to that gt.
         ignore_iof_thr (float): IoF threshold for ignoring bboxes (if
@@ -144,6 +139,7 @@ class MaxIoUAssigner(BaseAssigner):
         num_gts, num_bboxes = overlaps.size(0), overlaps.size(1)
 
         # 1. assign -1 by default
+        # 首先初始化长度为 n 的 `assigned_gt_inds`，全部赋值为 -1，表示当前全部设置为忽略样本
         assigned_gt_inds = overlaps.new_full((num_bboxes, ),
                                              -1,
                                              dtype=torch.long)

@@ -86,18 +86,24 @@ class StandardRoIHead(BaseRoIHead, BBoxTestMixin, MaskTestMixin):
             if gt_bboxes_ignore is None:
                 gt_bboxes_ignore = [None for _ in range(num_imgs)]
             sampling_results = []
+            # 遍历每张图片，单独计算 BBox Assigner 和 BBox Sampler 
             for i in range(num_imgs):
                 assign_result = self.bbox_assigner.assign(
-                    proposal_list[i], gt_bboxes[i], gt_bboxes_ignore[i],
-                    gt_labels[i])
+                    proposal_list[i],       # 是 RPN test 输出的候选框
+                    gt_bboxes[i], 
+                    gt_bboxes_ignore[i],
+                    gt_labels[i]
+                )
+                # 随机采样
                 sampling_result = self.bbox_sampler.sample(
                     assign_result,
                     proposal_list[i],
                     gt_bboxes[i],
                     gt_labels[i],
-                    feats=[lvl_feat[i][None] for lvl_feat in x])
+                    feats=[lvl_feat[i][None] for lvl_feat in x]
+                )
                 sampling_results.append(sampling_result)
-
+        # 特征重映射+ RoI 区域特征提取+ 网络 forward + Loss 计算
         losses = dict()
         # bbox head forward and loss
         if self.with_bbox:
@@ -118,6 +124,7 @@ class StandardRoIHead(BaseRoIHead, BBoxTestMixin, MaskTestMixin):
     def _bbox_forward(self, x, rois):
         """Box head forward function used in both training and testing."""
         # TODO: a more flexible way to decide which feature maps to use
+        # Faster R-CNN重点
         bbox_feats = self.bbox_roi_extractor(
             x[:self.bbox_roi_extractor.num_inputs], rois)
         if self.with_shared_head:
@@ -131,11 +138,14 @@ class StandardRoIHead(BaseRoIHead, BBoxTestMixin, MaskTestMixin):
     def _bbox_forward_train(self, x, sampling_results, gt_bboxes, gt_labels,
                             img_metas):
         """Run forward function and calculate loss for box head in training."""
+        # roi提取
         rois = bbox2roi([res.bboxes for res in sampling_results])
+        # 特征重映射+ RoI特征提取+ 网络 forward
         bbox_results = self._bbox_forward(x, rois)
-
+        # 计算每个样本对应的 target, bbox encoder 在内部进行
         bbox_targets = self.bbox_head.get_targets(sampling_results, gt_bboxes,
                                                   gt_labels, self.train_cfg)
+        # 计算 loss
         loss_bbox = self.bbox_head.loss(bbox_results['cls_score'],
                                         bbox_results['bbox_pred'], rois,
                                         *bbox_targets)

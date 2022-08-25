@@ -21,10 +21,15 @@ from mmdet.utils import (collect_env, get_device, get_root_logger,
                          replace_cfg_vals, setup_multi_processes,
                          update_data_root)
 
+os.environ["CUDA_VISIBLE_DEVICES"] = "1"
+
 
 def parse_args():
     parser = argparse.ArgumentParser(description='Train a detector')
-    parser.add_argument('config', help='train config file path')
+    parser.add_argument(
+        '--config', 
+        default="/media/hp3090/HDD-2T/renjunjie/SAR_DETECTION/mmdetection/customer_configs/faster_rcnn_r50_fpn_1x_ssdd_20220619.py",
+        help='train config file path')
     parser.add_argument('--work-dir', help='the dir to save logs and models')
     parser.add_argument(
         '--resume-from', help='the checkpoint file to resume from')

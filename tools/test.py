@@ -20,12 +20,20 @@ from mmdet.utils import (build_ddp, build_dp, compat_cfg, get_device,
                          replace_cfg_vals, setup_multi_processes,
                          update_data_root)
 
+os.environ["CUDA_VISIBLE_DEVICES"] = "1"
+
 
 def parse_args():
     parser = argparse.ArgumentParser(
         description='MMDet test (and eval) a model')
-    parser.add_argument('config', help='test config file path')
-    parser.add_argument('checkpoint', help='checkpoint file')
+    parser.add_argument(
+        '--config', 
+        default="/media/hp3090/HDD-2T/renjunjie/SAR_DETECTION/mmdetection/work_dirs/faster_rcnn_r50_fpn_1x_ssdd_20220411/faster_rcnn_r50_fpn_1x_ssdd_20220411.py",
+        help='test config file path')
+    parser.add_argument(
+        '--checkpoint', 
+        default="/media/hp3090/HDD-2T/renjunjie/SAR_DETECTION/mmdetection/work_dirs/faster_rcnn_r50_fpn_1x_ssdd_20220411/latest.pth",
+        help='checkpoint file')
     parser.add_argument(
         '--work-dir',
         help='the directory to save the file containing evaluation metrics')
